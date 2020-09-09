@@ -228,7 +228,7 @@ class RaytracerRenderer  {
         uniforms.pointee.frameIndex = UInt32(frameIndex)
        
         #if os(OSX)
-        uniformBuffer.didModifyRange( uniformBufferOffset..<alignedUniformsSize)
+        uniformBuffer.didModifyRange( uniformBufferOffset..<uniformBufferIndex*alignedUniformsSize)
         #endif
         
         uniformBufferIndex = (uniformBufferIndex + 1) % maxBuffersInFlight
