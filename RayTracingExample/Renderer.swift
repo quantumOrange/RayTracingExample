@@ -11,6 +11,7 @@
 import Metal
 import MetalKit
 import simd
+import MetalPerformanceShaders
 
 // The 256 byte aligned size of our uniform structure
 let alignedUniformsSize = (MemoryLayout<Uniforms>.size + 0xFF) & -0x100
@@ -21,194 +22,206 @@ enum RendererError: Error {
     case badVertexDescriptor
 }
 
-class Renderer: NSObject, MTKViewDelegate {
+class Renderer:NSObject,MTKViewDelegate {
     
+    let raytracer: RaytracerRenderer
+    
+    init?(metalKitView: MTKView) {
+        guard let raytracer = RaytracerRenderer(metalKitView: metalKitView) else { return nil }
+        self.raytracer = raytracer
+    }
+    
+    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
+        raytracer.mtkView(view, drawableSizeWillChange: size)
+    }
+    
+    func draw(in view: MTKView) {
+        raytracer.draw(in: view)
+    }
+}
+
+class RaytracerRenderer  {
+    
+    var view:MTKView
     public let device: MTLDevice
-    let commandQueue: MTLCommandQueue
-    var dynamicUniformBuffer: MTLBuffer
-    var pipelineState: MTLRenderPipelineState
-    var depthState: MTLDepthStencilState
-    var colorMap: MTLTexture
+    var commandQueue: MTLCommandQueue
+    var library:MTLLibrary
+    
+    var accelerationStructure:MPSTriangleAccelerationStructure!
+    var intersector:MPSRayIntersector!
+    
+    var vertexPositionBuffer:MTLBuffer!
+    var vertexNormalBuffer:MTLBuffer!
+    var vertexColorBuffer:MTLBuffer!
+    var rayBuffer:MTLBuffer!
+    var shadowRayBuffer:MTLBuffer!
+    var intersectionBuffer:MTLBuffer!
+    var uniformBuffer:MTLBuffer!
+    var triangleMaskBuffer:MTLBuffer!
+    
+    var rayPipeline:MTLComputePipelineState!
+    var shadePipeline:MTLComputePipelineState!
+    var shadowPipeline:MTLComputePipelineState!
+    var accumulatePipeline:MTLComputePipelineState!
+    var copyPipeline:MTLRenderPipelineState!
+    
+    var renderTargets_1:MTLTexture!
+    var accumulationTargets_1:MTLTexture!
+    var renderTargets_2:MTLTexture!
+    var accumulationTargets_2:MTLTexture!
+    
+    var randomTexture:MTLTexture!
     
     let inFlightSemaphore = DispatchSemaphore(value: maxBuffersInFlight)
     
-    var uniformBufferOffset = 0
+    var size:CGSize = CGSize.zero
+    var uniformBufferOffset:Int = 0
+    var uniformBufferIndex:Int = 0
+    var uniformBufferAddress: UnsafeMutableRawPointer!
     
-    var uniformBufferIndex = 0
+    var scene:Scene
+
+    let rayStride = 48
+    let intersectionStride = MemoryLayout<MPSIntersectionDistancePrimitiveIndexCoordinates>.stride;
     
-    var uniforms: UnsafeMutablePointer<Uniforms>
-    
-    var projectionMatrix: matrix_float4x4 = matrix_float4x4()
-    
-    var rotation: Float = 0
-    
-    var mesh: MTKMesh
+    var frameIndex = 0
     
     init?(metalKitView: MTKView) {
         self.device = metalKitView.device!
-        guard let queue = self.device.makeCommandQueue() else { return nil }
+        guard let queue = self.device.makeCommandQueue(),
+            let lib = device.makeDefaultLibrary()
+                                                else { return nil }
+        
+        self.view = metalKitView
+        view.colorPixelFormat = MTLPixelFormat.rgba16Float
+        view.sampleCount = 1
+        view.drawableSize = view.frame.size
+        
         self.commandQueue = queue
+        self.library = lib
+        
+        scene = Scene()
+        scene.createCubesScene()
+        guard let _ = try? loadMetal() else { return nil }
+        
+    }
+    
+    func loadMetal() throws {
+        try createPipelines()
+        createBuffers()
+        createIntersector()
+    }
+    
+    func createPipelines() throws {
+        
+        let computeDescriptor = MTLComputePipelineDescriptor()
+        computeDescriptor.threadGroupSizeIsMultipleOfThreadExecutionWidth = true
+        
+        computeDescriptor.computeFunction = library.makeFunction(name: "rayKernel")
+        rayPipeline =  try device.makeComputePipelineState(descriptor: computeDescriptor, options: MTLPipelineOption(rawValue: 0), reflection: nil)
+        
+        computeDescriptor.computeFunction = library.makeFunction(name: "shadeKernel")
+        shadePipeline =  try device.makeComputePipelineState(descriptor: computeDescriptor, options: MTLPipelineOption(rawValue: 0), reflection: nil)
+        
+        computeDescriptor.computeFunction = library.makeFunction(name: "shadowKernel")
+        shadowPipeline =  try device.makeComputePipelineState(descriptor: computeDescriptor, options: MTLPipelineOption(rawValue: 0), reflection: nil)
+        
+        computeDescriptor.computeFunction = library.makeFunction(name: "accumulateKernel")
+        accumulatePipeline = try device.makeComputePipelineState(descriptor: computeDescriptor, options: MTLPipelineOption(rawValue: 0), reflection: nil)
+        
+        let renderDescriptor = MTLRenderPipelineDescriptor()
+        renderDescriptor.sampleCount = view.sampleCount
+        renderDescriptor.vertexFunction = library.makeFunction(name:"copyVertex")
+        renderDescriptor.fragmentFunction = library.makeFunction(name:"copyFragment")
+        renderDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
+        
+        copyPipeline = try device.makeRenderPipelineState(descriptor: renderDescriptor)
+    }
+    
+    func createBuffers()  {
         
         let uniformBufferSize = alignedUniformsSize * maxBuffersInFlight
+        let options = MTLResourceOptions.storageModeShared
         
-        guard let buffer = self.device.makeBuffer(length:uniformBufferSize, options:[MTLResourceOptions.storageModeShared]) else { return nil }
-        dynamicUniformBuffer = buffer
+        guard   let _uniformBuffer = device.makeBuffer(length: uniformBufferSize, options: options),
+                let _vertexPositionBuffer = device.makeBuffer(length: scene.vertices.byteLength, options: options),
+                let _vertexColorBuffer = device.makeBuffer(length:    scene.colors.byteLength, options: options),
+                let _vertexNormalBuffer = device.makeBuffer(length:   scene.normals.byteLength, options: options),
+                let _triangleMaskBuffer  = device.makeBuffer(length:  scene.masks.byteLength, options: options)
+                                                                                                            else { return }
+
+        uniformBuffer           = _uniformBuffer
+        vertexPositionBuffer    = _vertexPositionBuffer
+        vertexColorBuffer       = _vertexColorBuffer
+        vertexNormalBuffer      = _vertexNormalBuffer
+        triangleMaskBuffer      = _triangleMaskBuffer
         
-        self.dynamicUniformBuffer.label = "UniformBuffer"
-        
-        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents()).bindMemory(to:Uniforms.self, capacity:1)
-        
-        metalKitView.depthStencilPixelFormat = MTLPixelFormat.depth32Float_stencil8
-        metalKitView.colorPixelFormat = MTLPixelFormat.bgra8Unorm_srgb
-        metalKitView.sampleCount = 1
-        
-        let mtlVertexDescriptor = Renderer.buildMetalVertexDescriptor()
-        
-        do {
-            pipelineState = try Renderer.buildRenderPipelineWithDevice(device: device,
-                                                                       metalKitView: metalKitView,
-                                                                       mtlVertexDescriptor: mtlVertexDescriptor)
-        } catch {
-            print("Unable to compile render pipeline state.  Error info: \(error)")
-            return nil
-        }
-        
-        let depthStateDesciptor = MTLDepthStencilDescriptor()
-        depthStateDesciptor.depthCompareFunction = MTLCompareFunction.less
-        depthStateDesciptor.isDepthWriteEnabled = true
-        guard let state = device.makeDepthStencilState(descriptor:depthStateDesciptor) else { return nil }
-        depthState = state
-        
-        do {
-            mesh = try Renderer.buildMesh(device: device, mtlVertexDescriptor: mtlVertexDescriptor)
-        } catch {
-            print("Unable to build MetalKit Mesh. Error info: \(error)")
-            return nil
-        }
-        
-        do {
-            colorMap = try Renderer.loadTexture(device: device, textureName: "ColorMap")
-        } catch {
-            print("Unable to load texture. Error info: \(error)")
-            return nil
-        }
-        
-        super.init()
+        vertexPositionBuffer.contents().copyMemory(from:scene.vertices, byteCount:scene.vertices.byteLength)
+        vertexColorBuffer.contents().copyMemory(from:scene.colors, byteCount:scene.colors.byteLength)
+        vertexNormalBuffer.contents().copyMemory(from:scene.normals, byteCount:scene.normals.byteLength)
+        triangleMaskBuffer.contents().copyMemory(from:scene.masks, byteCount:scene.masks.byteLength)
         
     }
     
-    class func buildMetalVertexDescriptor() -> MTLVertexDescriptor {
-        // Creete a Metal vertex descriptor specifying how vertices will by laid out for input into our render
-        //   pipeline and how we'll layout our Model IO vertices
+    func createIntersector() {
+        intersector = MPSRayIntersector(device: device)
+       
+        //MPSRayDataType.originMaskDirectionMaxDistance
+        intersector.rayDataType     =  MPSRayDataType.originMaskDirectionMaxDistance
+        intersector.rayStride       =  rayStride
+        intersector.rayMaskOptions  =  MPSRayMaskOptions.primitive
         
-        let mtlVertexDescriptor = MTLVertexDescriptor()
+        accelerationStructure = MPSTriangleAccelerationStructure(device: device)
+        accelerationStructure.vertexBuffer  =  vertexPositionBuffer;
+        accelerationStructure.maskBuffer    = triangleMaskBuffer;
+        accelerationStructure.triangleCount = scene.vertices.count / 3
         
-        mtlVertexDescriptor.attributes[VertexAttribute.position.rawValue].format = MTLVertexFormat.float3
-        mtlVertexDescriptor.attributes[VertexAttribute.position.rawValue].offset = 0
-        mtlVertexDescriptor.attributes[VertexAttribute.position.rawValue].bufferIndex = BufferIndex.meshPositions.rawValue
-        
-        mtlVertexDescriptor.attributes[VertexAttribute.texcoord.rawValue].format = MTLVertexFormat.float2
-        mtlVertexDescriptor.attributes[VertexAttribute.texcoord.rawValue].offset = 0
-        mtlVertexDescriptor.attributes[VertexAttribute.texcoord.rawValue].bufferIndex = BufferIndex.meshGenerics.rawValue
-        
-        mtlVertexDescriptor.layouts[BufferIndex.meshPositions.rawValue].stride = 12
-        mtlVertexDescriptor.layouts[BufferIndex.meshPositions.rawValue].stepRate = 1
-        mtlVertexDescriptor.layouts[BufferIndex.meshPositions.rawValue].stepFunction = MTLVertexStepFunction.perVertex
-        
-        mtlVertexDescriptor.layouts[BufferIndex.meshGenerics.rawValue].stride = 8
-        mtlVertexDescriptor.layouts[BufferIndex.meshGenerics.rawValue].stepRate = 1
-        mtlVertexDescriptor.layouts[BufferIndex.meshGenerics.rawValue].stepFunction = MTLVertexStepFunction.perVertex
-        
-        return mtlVertexDescriptor
+        accelerationStructure.rebuild()
     }
     
-    class func buildRenderPipelineWithDevice(device: MTLDevice,
-                                             metalKitView: MTKView,
-                                             mtlVertexDescriptor: MTLVertexDescriptor) throws -> MTLRenderPipelineState {
-        /// Build a render state pipeline object
-        
-        let library = device.makeDefaultLibrary()
-        
-        let vertexFunction = library?.makeFunction(name: "vertexShader")
-        let fragmentFunction = library?.makeFunction(name: "fragmentShader")
-        
-        let pipelineDescriptor = MTLRenderPipelineDescriptor()
-        pipelineDescriptor.label = "RenderPipeline"
-        pipelineDescriptor.sampleCount = metalKitView.sampleCount
-        pipelineDescriptor.vertexFunction = vertexFunction
-        pipelineDescriptor.fragmentFunction = fragmentFunction
-        pipelineDescriptor.vertexDescriptor = mtlVertexDescriptor
-        
-        pipelineDescriptor.colorAttachments[0].pixelFormat = metalKitView.colorPixelFormat
-        pipelineDescriptor.depthAttachmentPixelFormat = metalKitView.depthStencilPixelFormat
-        pipelineDescriptor.stencilAttachmentPixelFormat = metalKitView.depthStencilPixelFormat
-        
-        return try device.makeRenderPipelineState(descriptor: pipelineDescriptor)
-    }
-    
-    class func buildMesh(device: MTLDevice,
-                         mtlVertexDescriptor: MTLVertexDescriptor) throws -> MTKMesh {
-        /// Create and condition mesh data to feed into a pipeline using the given vertex descriptor
-        
-        let metalAllocator = MTKMeshBufferAllocator(device: device)
-        
-        let mdlMesh = MDLMesh.newBox(withDimensions: SIMD3<Float>(4, 4, 4),
-                                     segments: SIMD3<UInt32>(2, 2, 2),
-                                     geometryType: MDLGeometryType.triangles,
-                                     inwardNormals:false,
-                                     allocator: metalAllocator)
-        
-        let mdlVertexDescriptor = MTKModelIOVertexDescriptorFromMetal(mtlVertexDescriptor)
-        
-        guard let attributes = mdlVertexDescriptor.attributes as? [MDLVertexAttribute] else {
-            throw RendererError.badVertexDescriptor
-        }
-        attributes[VertexAttribute.position.rawValue].name = MDLVertexAttributePosition
-        attributes[VertexAttribute.texcoord.rawValue].name = MDLVertexAttributeTextureCoordinate
-        
-        mdlMesh.vertexDescriptor = mdlVertexDescriptor
-        
-        return try MTKMesh(mesh:mdlMesh, device:device)
-    }
-    
-    class func loadTexture(device: MTLDevice,
-                           textureName: String) throws -> MTLTexture {
-        /// Load texture data with optimal parameters for sampling
-        
-        let textureLoader = MTKTextureLoader(device: device)
-        
-        let textureLoaderOptions = [
-            MTKTextureLoader.Option.textureUsage: NSNumber(value: MTLTextureUsage.shaderRead.rawValue),
-            MTKTextureLoader.Option.textureStorageMode: NSNumber(value: MTLStorageMode.`private`.rawValue)
-        ]
-        
-        return try textureLoader.newTexture(name: textureName,
-                                            scaleFactor: 1.0,
-                                            bundle: nil,
-                                            options: textureLoaderOptions)
-        
-    }
-    
-    private func updateDynamicBufferState() {
-        /// Update the state of our uniform buffers before rendering
+    func updateBufferStates() {
+        // Update the location(s) to which we'll write to in our dynamically changing Metal buffers for
+        //   the current frame (i.e. update our slot in the ring buffer used for the current frame)
         
         uniformBufferIndex = (uniformBufferIndex + 1) % maxBuffersInFlight
         
         uniformBufferOffset = alignedUniformsSize * uniformBufferIndex
         
-        uniforms = UnsafeMutableRawPointer(dynamicUniformBuffer.contents() + uniformBufferOffset).bindMemory(to:Uniforms.self, capacity:1)
+        uniformBufferAddress = uniformBuffer.contents().advanced(by:uniformBufferOffset)
+      
     }
     
-    private func updateGameState() {
-        /// Update any game state before rendering
+    func updateUnifroms() {
         
-        uniforms[0].projectionMatrix = projectionMatrix
+        updateBufferStates()
         
-        let rotationAxis = SIMD3<Float>(1, 1, 0)
-        let modelMatrix = matrix4x4_rotation(radians: rotation, axis: rotationAxis)
-        let viewMatrix = matrix4x4_translation(0.0, 0.0, -8.0)
-        uniforms[0].modelViewMatrix = simd_mul(viewMatrix, modelMatrix)
-        rotation += 0.01
+        let uniforms = uniformBufferAddress.assumingMemoryBound(to: Uniforms.self)
+
+        uniforms.pointee.camera.position = vector3(0.0, 1.0, 3.38)
+        uniforms.pointee.camera.forward = vector3(0.0, 0.0, -1.0)
+        uniforms.pointee.camera.right = vector3(1.0, 0.0, 0.0)
+        uniforms.pointee.camera.up = vector3(0.0, 1.0, 0.0)
+        uniforms.pointee.light.position = vector3(0.0, 1.98, 0.0)
+        uniforms.pointee.light.forward = vector3(0.0, -1.0, 0.0)
+        uniforms.pointee.light.right = vector3(0.25, 0.0, 0.0)
+        uniforms.pointee.light.up = vector3(0.0, 0.0, 0.25)
+        uniforms.pointee.light.color = vector3(4.0, 4.0, 4.0)
+        
+        let fieldOfView = 45.0 * (Float.pi / 180.0)
+        let aspectRatio = Float(size.width / size.height)
+        let imagePlaneHeight = tanf(fieldOfView / 2.0)
+        let imagePlaneWidth = aspectRatio * imagePlaneHeight
+        
+        frameIndex += 1
+        
+        uniforms.pointee.camera.right *= imagePlaneWidth
+        uniforms.pointee.camera.up *= imagePlaneHeight
+        
+        uniforms.pointee.width = UInt32(size.width)
+        uniforms.pointee.height = UInt32(size.height)
+        
+        uniforms.pointee.frameIndex = UInt32(frameIndex)
+        
     }
     
     func draw(in view: MTKView) {
@@ -223,56 +236,125 @@ class Renderer: NSObject, MTKViewDelegate {
                 semaphore.signal()
             }
             
-            self.updateDynamicBufferState()
+            updateUnifroms()
+            let width = Int(size.width)
+            let height = Int(size.height)
             
-            self.updateGameState()
             
-            /// Delay getting the currentRenderPassDescriptor until we absolutely need it to avoid
-            ///   holding onto the drawable and blocking the display pipeline any longer than necessary
+            // We will launch a rectangular grid of threads on the GPU to generate the rays. Threads are launched in
+            // groups called "threadgroups". We need to align the number of threads to be a multiple of the threadgroup
+            // size. We indicated when compiling the pipeline that the threadgroup size would be a multiple of the thread
+            // execution width (SIMD group size) which is typically 32 or 64 so 8x8 is a safe threadgroup size which
+            // should be small to be supported on most devices. A more advanced application would choose the threadgroup
+            // size dynamically.
+            let threadsPerThreadgroup = MTLSize(width: 8, height: 8, depth: 1);
+            let threadgroups = MTLSize(width: (width  + threadsPerThreadgroup.width  - 1) / threadsPerThreadgroup.width,
+                                       height: (height + threadsPerThreadgroup.height - 1) / threadsPerThreadgroup.height,
+                                       depth: 1);
+            
+            var computeEncoder = commandBuffer.makeComputeCommandEncoder()!
+            
+            
+            // 1) Generate rays
+            computeEncoder.setBuffer(uniformBuffer, offset: uniformBufferOffset, index: 0)
+            computeEncoder.setBuffer(rayBuffer,offset: 0,index: 1)
+            
+            computeEncoder.setTexture(randomTexture, index: 0)
+            computeEncoder.setTexture(renderTargets_1, index: 1)
+            
+            computeEncoder.setComputePipelineState(rayPipeline)
+            
+            computeEncoder.dispatchThreads(threadgroups, threadsPerThreadgroup: threadsPerThreadgroup)
+            
+            computeEncoder.endEncoding()
+            
+            // Bounce the rays about a few times
+            for i in 0..<3 {
+                intersector.intersectionDataType = MPSIntersectionDataType.distancePrimitiveIndexCoordinates
+                
+                intersector.encodeIntersection( commandBuffer: commandBuffer,
+                                                intersectionType: MPSIntersectionType.nearest,
+                                                rayBuffer: rayBuffer,
+                                                rayBufferOffset: 0,
+                                                intersectionBuffer: intersectionBuffer,
+                                                intersectionBufferOffset: 0,
+                                                rayCount: width * height,
+                                                accelerationStructure: accelerationStructure)
+               
+                computeEncoder = commandBuffer.makeComputeCommandEncoder()!
+                
+                
+            
+                computeEncoder.setBuffer(uniformBuffer      , offset:uniformBufferOffset,  index:0)
+                computeEncoder.setBuffer(rayBuffer          , offset:0                  ,  index:1)
+                computeEncoder.setBuffer(shadowRayBuffer    , offset:0                  ,  index:2)
+                computeEncoder.setBuffer(intersectionBuffer , offset:0                  ,  index:3)
+                computeEncoder.setBuffer(vertexColorBuffer  , offset:0                  ,  index:4)
+                computeEncoder.setBuffer(vertexNormalBuffer , offset:0                  ,  index:5)
+                computeEncoder.setBuffer(triangleMaskBuffer , offset:0                  ,  index:6)
+                
+                var bounce = i
+                computeEncoder.setBytes(&bounce, length:MemoryLayout<Int>.size , index: 7) // ???  wtf?
+                
+                computeEncoder.setTexture(randomTexture,   index: 0)
+                computeEncoder.setTexture(renderTargets_1, index: 1)
+                
+                computeEncoder.setComputePipelineState(shadePipeline)
+                computeEncoder.dispatchThreads(threadgroups, threadsPerThreadgroup: threadsPerThreadgroup)
+                computeEncoder.endEncoding()
+                
+                /* *** shadows **** */
+                
+                intersector.intersectionDataType = MPSIntersectionDataType.distance
+                 
+                intersector.encodeIntersection(  commandBuffer: commandBuffer,
+                                                 intersectionType: MPSIntersectionType.any,
+                                                 rayBuffer: shadowRayBuffer,
+                                                 rayBufferOffset: 0,
+                                                 intersectionBuffer: intersectionBuffer,
+                                                 intersectionBufferOffset: 0,
+                                                 rayCount: width * height,
+                                                 accelerationStructure: accelerationStructure)
+                
+                computeEncoder = commandBuffer.makeComputeCommandEncoder()!
+                 
+                computeEncoder.setBuffer(  uniformBuffer,       offset:uniformBufferOffset  , index:0 )
+                computeEncoder.setBuffer(  shadowRayBuffer,     offset:0                    , index:1 )
+                computeEncoder.setBuffer(  intersectionBuffer,  offset:0                    , index:2 )
+                computeEncoder.setTexture( renderTargets_1,     index:0 )
+                computeEncoder.setTexture( renderTargets_2,     index:1 )
+                
+                computeEncoder.setComputePipelineState(shadowPipeline)
+                computeEncoder.dispatchThreads(threadgroups, threadsPerThreadgroup: threadsPerThreadgroup)
+                computeEncoder.endEncoding()
+                
+                swap(&renderTargets_1,&renderTargets_2)
+               
+            }
+            /* *** acumulate **** */
+            computeEncoder = commandBuffer.makeComputeCommandEncoder()!
+                            
+            computeEncoder.setBuffer(  uniformBuffer,       offset:uniformBufferOffset  , index:0 )
+
+            computeEncoder.setTexture( renderTargets_1,     index:0 )
+            computeEncoder.setTexture( accumulationTargets_1,     index:1 )
+            computeEncoder.setTexture( accumulationTargets_2,     index:2 )
+
+            computeEncoder.setComputePipelineState(accumulatePipeline)
+            computeEncoder.dispatchThreads(threadgroups, threadsPerThreadgroup: threadsPerThreadgroup)
+            computeEncoder.endEncoding()
+
+            swap(&accumulationTargets_1,&accumulationTargets_2)
+            
+            
             let renderPassDescriptor = view.currentRenderPassDescriptor
-            
+
             if let renderPassDescriptor = renderPassDescriptor, let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) {
                 
-                /// Final pass rendering code here
-                renderEncoder.label = "Primary Render Encoder"
-                
-                renderEncoder.pushDebugGroup("Draw Box")
-                
-                renderEncoder.setCullMode(.back)
-                
-                renderEncoder.setFrontFacing(.counterClockwise)
-                
-                renderEncoder.setRenderPipelineState(pipelineState)
-                
-                renderEncoder.setDepthStencilState(depthState)
-                
-                renderEncoder.setVertexBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
-                renderEncoder.setFragmentBuffer(dynamicUniformBuffer, offset:uniformBufferOffset, index: BufferIndex.uniforms.rawValue)
-                
-                for (index, element) in mesh.vertexDescriptor.layouts.enumerated() {
-                    guard let layout = element as? MDLVertexBufferLayout else {
-                        return
-                    }
-                    
-                    if layout.stride != 0 {
-                        let buffer = mesh.vertexBuffers[index]
-                        renderEncoder.setVertexBuffer(buffer.buffer, offset:buffer.offset, index: index)
-                    }
-                }
-                
-                renderEncoder.setFragmentTexture(colorMap, index: TextureIndex.color.rawValue)
-                
-                for submesh in mesh.submeshes {
-                    renderEncoder.drawIndexedPrimitives(type: submesh.primitiveType,
-                                                        indexCount: submesh.indexCount,
-                                                        indexType: submesh.indexType,
-                                                        indexBuffer: submesh.indexBuffer.buffer,
-                                                        indexBufferOffset: submesh.indexBuffer.offset)
-                    
-                }
-                
-                renderEncoder.popDebugGroup()
-                
+                renderEncoder.setRenderPipelineState(copyPipeline)
+                renderEncoder.setFragmentTexture(accumulationTargets_1, index: 0)
+                // Draw a quad which fills the screen
+                renderEncoder.drawPrimitives(type: MTLPrimitiveType.triangle, vertexStart: 0, vertexCount: 6)
                 renderEncoder.endEncoding()
                 
                 if let drawable = view.currentDrawable {
@@ -281,47 +363,54 @@ class Renderer: NSObject, MTKViewDelegate {
             }
             
             commandBuffer.commit()
+            
         }
     }
     
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-        /// Respond to drawable size or orientation changes here
+        self.size = size
+        let rayCount = Int(size.width)*Int(size.height)
+        let options = MTLResourceOptions.storageModePrivate
         
-        let aspect = Float(size.width) / Float(size.height)
-        projectionMatrix = matrix_perspective_right_hand(fovyRadians: radians_from_degrees(65), aspectRatio:aspect, nearZ: 0.1, farZ: 100.0)
+        rayBuffer          = device.makeBuffer(length: rayStride * rayCount, options: options)!
+        shadowRayBuffer    = device.makeBuffer(length: rayStride * rayCount, options: options)!
+        intersectionBuffer = device.makeBuffer(length: intersectionStride * rayCount, options: options)!
+        
+        let renderTargetDescriptor = MTLTextureDescriptor()
+     
+        renderTargetDescriptor.pixelFormat = MTLPixelFormat.rgba32Float
+        renderTargetDescriptor.textureType =  MTLTextureType.type2D
+        renderTargetDescriptor.width = Int(size.width)
+        renderTargetDescriptor.height = Int(size.height)
+        
+        renderTargetDescriptor.storageMode = MTLStorageMode.private;
+        
+        renderTargetDescriptor.usage = [ MTLTextureUsage.shaderRead , MTLTextureUsage.shaderWrite ]
+        
+        
+        renderTargets_1 = device.makeTexture(descriptor:renderTargetDescriptor)!
+        accumulationTargets_1 = device.makeTexture(descriptor:renderTargetDescriptor)!
+        renderTargets_2 = device.makeTexture(descriptor:renderTargetDescriptor)!
+        accumulationTargets_2 = device.makeTexture(descriptor:renderTargetDescriptor)!
+        
+        
+        renderTargetDescriptor.pixelFormat = MTLPixelFormat.r32Uint  ///R32Uint;
+        renderTargetDescriptor.usage = MTLTextureUsage.shaderRead
+        renderTargetDescriptor.storageMode = MTLStorageMode.shared
+        
+        
+        // Generate a texture containing a random integer value for each pixel. This value
+        // will be used to decorrelate pixels while drawing pseudorandom numbers from the
+        // Halton sequence.
+        randomTexture = device.makeTexture(descriptor:renderTargetDescriptor)!
+        
+        let range:Range< UInt32> = 0..<(1024 * 1024)
+        let randomValues = (0..<rayCount).map { _ in UInt32.random(in: range) }
+            
+        randomTexture.replace(region: MTLRegionMake2D(0, 0, Int(size.width), Int(size.height)), mipmapLevel: 0, withBytes: randomValues, bytesPerRow: MemoryLayout<UInt32>.size * Int(size.width))
+        
+        frameIndex = 0
     }
 }
 
-// Generic matrix math utility functions
-func matrix4x4_rotation(radians: Float, axis: SIMD3<Float>) -> matrix_float4x4 {
-    let unitAxis = normalize(axis)
-    let ct = cosf(radians)
-    let st = sinf(radians)
-    let ci = 1 - ct
-    let x = unitAxis.x, y = unitAxis.y, z = unitAxis.z
-    return matrix_float4x4.init(columns:(vector_float4(    ct + x * x * ci, y * x * ci + z * st, z * x * ci - y * st, 0),
-                                         vector_float4(x * y * ci - z * st,     ct + y * y * ci, z * y * ci + x * st, 0),
-                                         vector_float4(x * z * ci + y * st, y * z * ci - x * st,     ct + z * z * ci, 0),
-                                         vector_float4(                  0,                   0,                   0, 1)))
-}
 
-func matrix4x4_translation(_ translationX: Float, _ translationY: Float, _ translationZ: Float) -> matrix_float4x4 {
-    return matrix_float4x4.init(columns:(vector_float4(1, 0, 0, 0),
-                                         vector_float4(0, 1, 0, 0),
-                                         vector_float4(0, 0, 1, 0),
-                                         vector_float4(translationX, translationY, translationZ, 1)))
-}
-
-func matrix_perspective_right_hand(fovyRadians fovy: Float, aspectRatio: Float, nearZ: Float, farZ: Float) -> matrix_float4x4 {
-    let ys = 1 / tanf(fovy * 0.5)
-    let xs = ys / aspectRatio
-    let zs = farZ / (nearZ - farZ)
-    return matrix_float4x4.init(columns:(vector_float4(xs,  0, 0,   0),
-                                         vector_float4( 0, ys, 0,   0),
-                                         vector_float4( 0,  0, zs, -1),
-                                         vector_float4( 0,  0, zs * nearZ, 0)))
-}
-
-func radians_from_degrees(_ degrees: Float) -> Float {
-    return (degrees / 180) * .pi
-}

@@ -7,14 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		546FAB992507AC6800D2A821 /* Scene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546FAB982507AC6800D2A821 /* Scene.swift */; };
 		54CBB0852505542D00FD9ED7 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CBB0842505542D00FD9ED7 /* AppDelegate.swift */; };
 		54CBB0882505542D00FD9ED7 /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CBB0872505542D00FD9ED7 /* Renderer.swift */; };
 		54CBB08A2505542D00FD9ED7 /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CBB0892505542D00FD9ED7 /* GameViewController.swift */; };
-		54CBB08C2505542D00FD9ED7 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 54CBB08B2505542D00FD9ED7 /* Shaders.metal */; };
 		54CBB08F2505542D00FD9ED7 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 54CBB08D2505542D00FD9ED7 /* Main.storyboard */; };
 		54CBB0912505542F00FD9ED7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 54CBB0902505542F00FD9ED7 /* Assets.xcassets */; };
 		54CBB0942505542F00FD9ED7 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 54CBB0922505542F00FD9ED7 /* LaunchScreen.storyboard */; };
 		54CBB09F2505543000FD9ED7 /* RayTracingExampleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CBB09E2505543000FD9ED7 /* RayTracingExampleTests.swift */; };
+		54CBB0AA2505559100FD9ED7 /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CBB0A92505559100FD9ED7 /* Utilities.swift */; };
+		54F464CA250809E3008FC842 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 54F464C9250809E3008FC842 /* Shaders.metal */; };
+		54F464CC2508D579008FC842 /* FaceMask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F464CB2508D579008FC842 /* FaceMask.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -28,12 +31,12 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		546FAB982507AC6800D2A821 /* Scene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scene.swift; sourceTree = "<group>"; };
 		54CBB0812505542D00FD9ED7 /* RayTracingExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RayTracingExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		54CBB0842505542D00FD9ED7 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		54CBB0862505542D00FD9ED7 /* ShaderTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShaderTypes.h; sourceTree = "<group>"; };
 		54CBB0872505542D00FD9ED7 /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
 		54CBB0892505542D00FD9ED7 /* GameViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameViewController.swift; sourceTree = "<group>"; };
-		54CBB08B2505542D00FD9ED7 /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		54CBB08E2505542D00FD9ED7 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		54CBB0902505542F00FD9ED7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		54CBB0932505542F00FD9ED7 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -41,6 +44,9 @@
 		54CBB09A2505543000FD9ED7 /* RayTracingExampleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RayTracingExampleTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		54CBB09E2505543000FD9ED7 /* RayTracingExampleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RayTracingExampleTests.swift; sourceTree = "<group>"; };
 		54CBB0A02505543000FD9ED7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		54CBB0A92505559100FD9ED7 /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
+		54F464C9250809E3008FC842 /* Shaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
+		54F464CB2508D579008FC842 /* FaceMask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaceMask.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -84,9 +90,12 @@
 			children = (
 				54CBB0842505542D00FD9ED7 /* AppDelegate.swift */,
 				54CBB0862505542D00FD9ED7 /* ShaderTypes.h */,
+				54F464CB2508D579008FC842 /* FaceMask.swift */,
 				54CBB0872505542D00FD9ED7 /* Renderer.swift */,
+				54CBB0A92505559100FD9ED7 /* Utilities.swift */,
+				54F464C9250809E3008FC842 /* Shaders.metal */,
+				546FAB982507AC6800D2A821 /* Scene.swift */,
 				54CBB0892505542D00FD9ED7 /* GameViewController.swift */,
-				54CBB08B2505542D00FD9ED7 /* Shaders.metal */,
 				54CBB08D2505542D00FD9ED7 /* Main.storyboard */,
 				54CBB0902505542F00FD9ED7 /* Assets.xcassets */,
 				54CBB0922505542F00FD9ED7 /* LaunchScreen.storyboard */,
@@ -205,8 +214,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				54CBB08C2505542D00FD9ED7 /* Shaders.metal in Sources */,
+				54F464CA250809E3008FC842 /* Shaders.metal in Sources */,
 				54CBB0882505542D00FD9ED7 /* Renderer.swift in Sources */,
+				546FAB992507AC6800D2A821 /* Scene.swift in Sources */,
+				54CBB0AA2505559100FD9ED7 /* Utilities.swift in Sources */,
+				54F464CC2508D579008FC842 /* FaceMask.swift in Sources */,
 				54CBB08A2505542D00FD9ED7 /* GameViewController.swift in Sources */,
 				54CBB0852505542D00FD9ED7 /* AppDelegate.swift in Sources */,
 			);
@@ -371,6 +383,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 84Y3R5UC5Q;
 				INFOPLIST_FILE = RayTracingExample/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -390,6 +403,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 84Y3R5UC5Q;
 				INFOPLIST_FILE = RayTracingExample/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
