@@ -141,7 +141,13 @@ class RaytracerRenderer  {
     func createBuffers()  {
         
         let uniformBufferSize = alignedUniformsSize * maxBuffersInFlight
-        let options = MTLResourceOptions.storageModeShared
+        
+        #if os(iOS)
+            let options = MTLResourceOptions.storageModeShared
+        #elseif os(OSX)
+            let options = MTLResourceOptions.storageModeManaged
+        #endif
+        
         
         guard   let _uniformBuffer = device.makeBuffer(length: uniformBufferSize, options: options),
                 let _vertexPositionBuffer = device.makeBuffer(length: scene.vertices.byteLength, options: options),
@@ -161,6 +167,15 @@ class RaytracerRenderer  {
         vertexNormalBuffer.contents().copyMemory(from:scene.normals, byteCount:scene.normals.byteLength)
         triangleMaskBuffer.contents().copyMemory(from:scene.masks, byteCount:scene.masks.byteLength)
         
+
+        
+        #if os(OSX)
+        vertexPositionBuffer.didModifyRange( 0..<vertexPositionBuffer.length )
+        vertexColorBuffer.didModifyRange(    0..<vertexColorBuffer.length    )
+        vertexNormalBuffer.didModifyRange(   0..<vertexNormalBuffer.length   )
+        triangleMaskBuffer.didModifyRange(   0..<triangleMaskBuffer.length   )
+        #endif
+        
     }
     
     func createIntersector() {
@@ -179,21 +194,11 @@ class RaytracerRenderer  {
         accelerationStructure.rebuild()
     }
     
-    func updateBufferStates() {
-        // Update the location(s) to which we'll write to in our dynamically changing Metal buffers for
-        //   the current frame (i.e. update our slot in the ring buffer used for the current frame)
-        
-        uniformBufferIndex = (uniformBufferIndex + 1) % maxBuffersInFlight
-        
+    
+    func updateUnifroms() {
         uniformBufferOffset = alignedUniformsSize * uniformBufferIndex
         
         uniformBufferAddress = uniformBuffer.contents().advanced(by:uniformBufferOffset)
-      
-    }
-    
-    func updateUnifroms() {
-        
-        updateBufferStates()
         
         let uniforms = uniformBufferAddress.assumingMemoryBound(to: Uniforms.self)
 
@@ -221,7 +226,12 @@ class RaytracerRenderer  {
         uniforms.pointee.height = UInt32(size.height)
         
         uniforms.pointee.frameIndex = UInt32(frameIndex)
+       
+        #if os(OSX)
+        uniformBuffer.didModifyRange( uniformBufferOffset..<alignedUniformsSize)
+        #endif
         
+        uniformBufferIndex = (uniformBufferIndex + 1) % maxBuffersInFlight
     }
     
     func draw(in view: MTKView) {
@@ -396,8 +406,12 @@ class RaytracerRenderer  {
         
         renderTargetDescriptor.pixelFormat = MTLPixelFormat.r32Uint  ///R32Uint;
         renderTargetDescriptor.usage = MTLTextureUsage.shaderRead
-        renderTargetDescriptor.storageMode = MTLStorageMode.shared
         
+        #if os(iOS)
+            renderTargetDescriptor.storageMode = MTLStorageMode.shared
+        #elseif os(OSX)
+            renderTargetDescriptor.storageMode = MTLStorageMode.managed
+        #endif
         
         // Generate a texture containing a random integer value for each pixel. This value
         // will be used to decorrelate pixels while drawing pseudorandom numbers from the

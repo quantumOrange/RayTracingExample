@@ -18,6 +18,18 @@
 		54CBB0AA2505559100FD9ED7 /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CBB0A92505559100FD9ED7 /* Utilities.swift */; };
 		54F464CA250809E3008FC842 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 54F464C9250809E3008FC842 /* Shaders.metal */; };
 		54F464CC2508D579008FC842 /* FaceMask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F464CB2508D579008FC842 /* FaceMask.swift */; };
+		54F465102508ED14008FC842 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F4650F2508ED14008FC842 /* AppDelegate.swift */; };
+		54F465122508ED14008FC842 /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F465112508ED14008FC842 /* GameViewController.swift */; };
+		54F465192508ED17008FC842 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 54F465182508ED17008FC842 /* Assets.xcassets */; };
+		54F4651C2508ED17008FC842 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 54F4651A2508ED17008FC842 /* Main.storyboard */; };
+		54F465282508ED17008FC842 /* RayTracingExample_macOSTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F465272508ED17008FC842 /* RayTracingExample_macOSTests.swift */; };
+		54F465302508ED77008FC842 /* FaceMask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54F464CB2508D579008FC842 /* FaceMask.swift */; };
+		54F465312508ED77008FC842 /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CBB0872505542D00FD9ED7 /* Renderer.swift */; };
+		54F465322508ED77008FC842 /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CBB0A92505559100FD9ED7 /* Utilities.swift */; };
+		54F465332508ED77008FC842 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 54F464C9250809E3008FC842 /* Shaders.metal */; };
+		54F465342508ED77008FC842 /* Scene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546FAB982507AC6800D2A821 /* Scene.swift */; };
+		54F465352508F26A008FC842 /* ShaderTypes.h in Resources */ = {isa = PBXBuildFile; fileRef = 54CBB0862505542D00FD9ED7 /* ShaderTypes.h */; };
+		54F465362508F271008FC842 /* ShaderTypes.h in Resources */ = {isa = PBXBuildFile; fileRef = 54CBB0862505542D00FD9ED7 /* ShaderTypes.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -27,6 +39,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 54CBB0802505542D00FD9ED7;
 			remoteInfo = RayTracingExample;
+		};
+		54F465242508ED17008FC842 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 54CBB0792505542D00FD9ED7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 54F4650C2508ED14008FC842;
+			remoteInfo = "RayTracingExample-macOS";
 		};
 /* End PBXContainerItemProxy section */
 
@@ -47,6 +66,16 @@
 		54CBB0A92505559100FD9ED7 /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
 		54F464C9250809E3008FC842 /* Shaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		54F464CB2508D579008FC842 /* FaceMask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaceMask.swift; sourceTree = "<group>"; };
+		54F4650D2508ED14008FC842 /* RayTracingExample-macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "RayTracingExample-macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		54F4650F2508ED14008FC842 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		54F465112508ED14008FC842 /* GameViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameViewController.swift; sourceTree = "<group>"; };
+		54F465182508ED17008FC842 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		54F4651B2508ED17008FC842 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		54F4651D2508ED17008FC842 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		54F4651E2508ED17008FC842 /* RayTracingExample_macOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RayTracingExample_macOS.entitlements; sourceTree = "<group>"; };
+		54F465232508ED17008FC842 /* RayTracingExample-macOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "RayTracingExample-macOSTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		54F465272508ED17008FC842 /* RayTracingExample_macOSTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RayTracingExample_macOSTests.swift; sourceTree = "<group>"; };
+		54F465292508ED17008FC842 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,14 +93,31 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		54F4650A2508ED14008FC842 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		54F465202508ED17008FC842 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		54CBB0782505542D00FD9ED7 = {
 			isa = PBXGroup;
 			children = (
-				54CBB0832505542D00FD9ED7 /* RayTracingExample */,
+				54F465072508EC52008FC842 /* Raytracing */,
+				54CBB0832505542D00FD9ED7 /* RayTracingExample-iOS */,
 				54CBB09D2505543000FD9ED7 /* RayTracingExampleTests */,
+				54F4650E2508ED14008FC842 /* RayTracingExample-macOS */,
+				54F465262508ED17008FC842 /* RayTracingExample-macOSTests */,
 				54CBB0822505542D00FD9ED7 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -81,27 +127,23 @@
 			children = (
 				54CBB0812505542D00FD9ED7 /* RayTracingExample.app */,
 				54CBB09A2505543000FD9ED7 /* RayTracingExampleTests.xctest */,
+				54F4650D2508ED14008FC842 /* RayTracingExample-macOS.app */,
+				54F465232508ED17008FC842 /* RayTracingExample-macOSTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		54CBB0832505542D00FD9ED7 /* RayTracingExample */ = {
+		54CBB0832505542D00FD9ED7 /* RayTracingExample-iOS */ = {
 			isa = PBXGroup;
 			children = (
-				54CBB0842505542D00FD9ED7 /* AppDelegate.swift */,
-				54CBB0862505542D00FD9ED7 /* ShaderTypes.h */,
-				54F464CB2508D579008FC842 /* FaceMask.swift */,
-				54CBB0872505542D00FD9ED7 /* Renderer.swift */,
-				54CBB0A92505559100FD9ED7 /* Utilities.swift */,
-				54F464C9250809E3008FC842 /* Shaders.metal */,
-				546FAB982507AC6800D2A821 /* Scene.swift */,
 				54CBB0892505542D00FD9ED7 /* GameViewController.swift */,
+				54CBB0842505542D00FD9ED7 /* AppDelegate.swift */,
+				54CBB0952505542F00FD9ED7 /* Info.plist */,
+				54CBB0922505542F00FD9ED7 /* LaunchScreen.storyboard */,
 				54CBB08D2505542D00FD9ED7 /* Main.storyboard */,
 				54CBB0902505542F00FD9ED7 /* Assets.xcassets */,
-				54CBB0922505542F00FD9ED7 /* LaunchScreen.storyboard */,
-				54CBB0952505542F00FD9ED7 /* Info.plist */,
 			);
-			path = RayTracingExample;
+			path = "RayTracingExample-iOS";
 			sourceTree = "<group>";
 		};
 		54CBB09D2505543000FD9ED7 /* RayTracingExampleTests */ = {
@@ -111,6 +153,41 @@
 				54CBB0A02505543000FD9ED7 /* Info.plist */,
 			);
 			path = RayTracingExampleTests;
+			sourceTree = "<group>";
+		};
+		54F465072508EC52008FC842 /* Raytracing */ = {
+			isa = PBXGroup;
+			children = (
+				54CBB0862505542D00FD9ED7 /* ShaderTypes.h */,
+				54F464CB2508D579008FC842 /* FaceMask.swift */,
+				54CBB0872505542D00FD9ED7 /* Renderer.swift */,
+				54CBB0A92505559100FD9ED7 /* Utilities.swift */,
+				54F464C9250809E3008FC842 /* Shaders.metal */,
+				546FAB982507AC6800D2A821 /* Scene.swift */,
+			);
+			path = Raytracing;
+			sourceTree = "<group>";
+		};
+		54F4650E2508ED14008FC842 /* RayTracingExample-macOS */ = {
+			isa = PBXGroup;
+			children = (
+				54F4650F2508ED14008FC842 /* AppDelegate.swift */,
+				54F465112508ED14008FC842 /* GameViewController.swift */,
+				54F465182508ED17008FC842 /* Assets.xcassets */,
+				54F4651A2508ED17008FC842 /* Main.storyboard */,
+				54F4651D2508ED17008FC842 /* Info.plist */,
+				54F4651E2508ED17008FC842 /* RayTracingExample_macOS.entitlements */,
+			);
+			path = "RayTracingExample-macOS";
+			sourceTree = "<group>";
+		};
+		54F465262508ED17008FC842 /* RayTracingExample-macOSTests */ = {
+			isa = PBXGroup;
+			children = (
+				54F465272508ED17008FC842 /* RayTracingExample_macOSTests.swift */,
+				54F465292508ED17008FC842 /* Info.plist */,
+			);
+			path = "RayTracingExample-macOSTests";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -151,6 +228,41 @@
 			productReference = 54CBB09A2505543000FD9ED7 /* RayTracingExampleTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		54F4650C2508ED14008FC842 /* RayTracingExample-macOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 54F4652A2508ED17008FC842 /* Build configuration list for PBXNativeTarget "RayTracingExample-macOS" */;
+			buildPhases = (
+				54F465092508ED14008FC842 /* Sources */,
+				54F4650A2508ED14008FC842 /* Frameworks */,
+				54F4650B2508ED14008FC842 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "RayTracingExample-macOS";
+			productName = "RayTracingExample-macOS";
+			productReference = 54F4650D2508ED14008FC842 /* RayTracingExample-macOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+		54F465222508ED17008FC842 /* RayTracingExample-macOSTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 54F4652D2508ED17008FC842 /* Build configuration list for PBXNativeTarget "RayTracingExample-macOSTests" */;
+			buildPhases = (
+				54F4651F2508ED17008FC842 /* Sources */,
+				54F465202508ED17008FC842 /* Frameworks */,
+				54F465212508ED17008FC842 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				54F465252508ED17008FC842 /* PBXTargetDependency */,
+			);
+			name = "RayTracingExample-macOSTests";
+			productName = "RayTracingExample-macOSTests";
+			productReference = 54F465232508ED17008FC842 /* RayTracingExample-macOSTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -167,6 +279,13 @@
 					54CBB0992505543000FD9ED7 = {
 						CreatedOnToolsVersion = 11.7;
 						TestTargetID = 54CBB0802505542D00FD9ED7;
+					};
+					54F4650C2508ED14008FC842 = {
+						CreatedOnToolsVersion = 11.7;
+					};
+					54F465222508ED17008FC842 = {
+						CreatedOnToolsVersion = 11.7;
+						TestTargetID = 54F4650C2508ED14008FC842;
 					};
 				};
 			};
@@ -185,6 +304,8 @@
 			targets = (
 				54CBB0802505542D00FD9ED7 /* RayTracingExample */,
 				54CBB0992505543000FD9ED7 /* RayTracingExampleTests */,
+				54F4650C2508ED14008FC842 /* RayTracingExample-macOS */,
+				54F465222508ED17008FC842 /* RayTracingExample-macOSTests */,
 			);
 		};
 /* End PBXProject section */
@@ -194,6 +315,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				54F465362508F271008FC842 /* ShaderTypes.h in Resources */,
 				54CBB0942505542F00FD9ED7 /* LaunchScreen.storyboard in Resources */,
 				54CBB0912505542F00FD9ED7 /* Assets.xcassets in Resources */,
 				54CBB08F2505542D00FD9ED7 /* Main.storyboard in Resources */,
@@ -201,6 +323,23 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		54CBB0982505543000FD9ED7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		54F4650B2508ED14008FC842 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				54F465352508F26A008FC842 /* ShaderTypes.h in Resources */,
+				54F465192508ED17008FC842 /* Assets.xcassets in Resources */,
+				54F4651C2508ED17008FC842 /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		54F465212508ED17008FC842 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -232,6 +371,28 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		54F465092508ED14008FC842 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				54F465332508ED77008FC842 /* Shaders.metal in Sources */,
+				54F465312508ED77008FC842 /* Renderer.swift in Sources */,
+				54F465122508ED14008FC842 /* GameViewController.swift in Sources */,
+				54F465102508ED14008FC842 /* AppDelegate.swift in Sources */,
+				54F465342508ED77008FC842 /* Scene.swift in Sources */,
+				54F465322508ED77008FC842 /* Utilities.swift in Sources */,
+				54F465302508ED77008FC842 /* FaceMask.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		54F4651F2508ED17008FC842 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				54F465282508ED17008FC842 /* RayTracingExample_macOSTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -239,6 +400,11 @@
 			isa = PBXTargetDependency;
 			target = 54CBB0802505542D00FD9ED7 /* RayTracingExample */;
 			targetProxy = 54CBB09B2505543000FD9ED7 /* PBXContainerItemProxy */;
+		};
+		54F465252508ED17008FC842 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 54F4650C2508ED14008FC842 /* RayTracingExample-macOS */;
+			targetProxy = 54F465242508ED17008FC842 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -257,6 +423,14 @@
 				54CBB0932505542F00FD9ED7 /* Base */,
 			);
 			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		54F4651A2508ED17008FC842 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				54F4651B2508ED17008FC842 /* Base */,
+			);
+			name = Main.storyboard;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -390,7 +564,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.crooks.RayTracingExample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "$(TARGET_NAME)/ShaderTypes.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "$(TARGET_NAME)/Raytracing/ShaderTypes.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -410,7 +584,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.crooks.RayTracingExample;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SWIFT_OBJC_BRIDGING_HEADER = "$(TARGET_NAME)/ShaderTypes.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "$(TARGET_NAME)/Raytracing/ShaderTypes.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -460,6 +634,98 @@
 			};
 			name = Release;
 		};
+		54F4652B2508ED17008FC842 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "RayTracingExample-macOS/RayTracingExample_macOS.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 84Y3R5UC5Q;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = "RayTracingExample-macOS/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.crooks.RayTracingExample-macOS";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_OBJC_BRIDGING_HEADER = Raytracing/ShaderTypes.h;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		54F4652C2508ED17008FC842 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "RayTracingExample-macOS/RayTracingExample_macOS.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 84Y3R5UC5Q;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = "RayTracingExample-macOS/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.crooks.RayTracingExample-macOS";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_OBJC_BRIDGING_HEADER = Raytracing/ShaderTypes.h;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		54F4652E2508ED17008FC842 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 84Y3R5UC5Q;
+				INFOPLIST_FILE = "RayTracingExample-macOSTests/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.crooks.RayTracingExample-macOSTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RayTracingExample-macOS.app/Contents/MacOS/RayTracingExample-macOS";
+			};
+			name = Debug;
+		};
+		54F4652F2508ED17008FC842 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = 84Y3R5UC5Q;
+				INFOPLIST_FILE = "RayTracingExample-macOSTests/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.crooks.RayTracingExample-macOSTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RayTracingExample-macOS.app/Contents/MacOS/RayTracingExample-macOS";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -486,6 +752,24 @@
 			buildConfigurations = (
 				54CBB0A72505543000FD9ED7 /* Debug */,
 				54CBB0A82505543000FD9ED7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		54F4652A2508ED17008FC842 /* Build configuration list for PBXNativeTarget "RayTracingExample-macOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				54F4652B2508ED17008FC842 /* Debug */,
+				54F4652C2508ED17008FC842 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		54F4652D2508ED17008FC842 /* Build configuration list for PBXNativeTarget "RayTracingExample-macOSTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				54F4652E2508ED17008FC842 /* Debug */,
+				54F4652F2508ED17008FC842 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
