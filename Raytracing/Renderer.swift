@@ -18,10 +18,6 @@ let alignedUniformsSize = (MemoryLayout<Uniforms>.size + 0xFF) & -0x100
 
 let maxBuffersInFlight = 3
 
-enum RendererError: Error {
-    case badVertexDescriptor
-}
-
 class Renderer:NSObject,MTKViewDelegate {
     
     let raytracer: RaytracerRenderer
@@ -65,10 +61,10 @@ class RaytracerRenderer  {
     var accumulatePipeline:MTLComputePipelineState!
     var copyPipeline:MTLRenderPipelineState!
     
+    var renderTargets_0:MTLTexture!
+    var accumulationTargets_0:MTLTexture!
     var renderTargets_1:MTLTexture!
     var accumulationTargets_1:MTLTexture!
-    var renderTargets_2:MTLTexture!
-    var accumulationTargets_2:MTLTexture!
     
     var randomTexture:MTLTexture!
     
@@ -125,7 +121,10 @@ class RaytracerRenderer  {
         
         computeDescriptor.computeFunction = library.makeFunction(name: "shadowKernel")
         shadowPipeline =  try device.makeComputePipelineState(descriptor: computeDescriptor, options: MTLPipelineOption(rawValue: 0), reflection: nil)
+       
+        computeDescriptor.computeFunction = library.makeFunction(name: "accumulateKernel")
         
+        computeDescriptor.threadGroupSizeIsMultipleOfThreadExecutionWidth = true
         computeDescriptor.computeFunction = library.makeFunction(name: "accumulateKernel")
         accumulatePipeline = try device.makeComputePipelineState(descriptor: computeDescriptor, options: MTLPipelineOption(rawValue: 0), reflection: nil)
         
@@ -166,8 +165,6 @@ class RaytracerRenderer  {
         vertexColorBuffer.contents().copyMemory(from:scene.colors, byteCount:scene.colors.byteLength)
         vertexNormalBuffer.contents().copyMemory(from:scene.normals, byteCount:scene.normals.byteLength)
         triangleMaskBuffer.contents().copyMemory(from:scene.masks, byteCount:scene.masks.byteLength)
-        
-
         
         #if os(OSX)
         vertexPositionBuffer.didModifyRange( 0..<vertexPositionBuffer.length )
@@ -221,14 +218,16 @@ class RaytracerRenderer  {
         
         uniforms.pointee.camera.right *= imagePlaneWidth
         uniforms.pointee.camera.up *= imagePlaneHeight
-        
+       
         uniforms.pointee.width = UInt32(size.width)
         uniforms.pointee.height = UInt32(size.height)
         
+        
         uniforms.pointee.frameIndex = UInt32(frameIndex)
-       
+        
         #if os(OSX)
-        uniformBuffer.didModifyRange( uniformBufferOffset..<uniformBufferIndex*alignedUniformsSize)
+        let range = uniformBufferOffset..<uniformBufferOffset+alignedUniformsSize;
+        uniformBuffer.didModifyRange( range)
         #endif
         
         uniformBufferIndex = (uniformBufferIndex + 1) % maxBuffersInFlight
@@ -264,17 +263,17 @@ class RaytracerRenderer  {
             
             var computeEncoder = commandBuffer.makeComputeCommandEncoder()!
             
-            
             // 1) Generate rays
             computeEncoder.setBuffer(uniformBuffer, offset: uniformBufferOffset, index: 0)
             computeEncoder.setBuffer(rayBuffer,offset: 0,index: 1)
             
             computeEncoder.setTexture(randomTexture, index: 0)
-            computeEncoder.setTexture(renderTargets_1, index: 1)
+            computeEncoder.setTexture(renderTargets_0, index: 1)
             
             computeEncoder.setComputePipelineState(rayPipeline)
             
-            computeEncoder.dispatchThreads(threadgroups, threadsPerThreadgroup: threadsPerThreadgroup)
+            computeEncoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadsPerThreadgroup)
+            
             
             computeEncoder.endEncoding()
             
@@ -307,10 +306,10 @@ class RaytracerRenderer  {
                 computeEncoder.setBytes(&bounce, length:MemoryLayout<Int>.size , index: 7) // ???  wtf?
                 
                 computeEncoder.setTexture(randomTexture,   index: 0)
-                computeEncoder.setTexture(renderTargets_1, index: 1)
+                computeEncoder.setTexture(renderTargets_0, index: 1)
                 
                 computeEncoder.setComputePipelineState(shadePipeline)
-                computeEncoder.dispatchThreads(threadgroups, threadsPerThreadgroup: threadsPerThreadgroup)
+                computeEncoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadsPerThreadgroup)
                 computeEncoder.endEncoding()
                 
                 /* *** shadows **** */
@@ -331,30 +330,30 @@ class RaytracerRenderer  {
                 computeEncoder.setBuffer(  uniformBuffer,       offset:uniformBufferOffset  , index:0 )
                 computeEncoder.setBuffer(  shadowRayBuffer,     offset:0                    , index:1 )
                 computeEncoder.setBuffer(  intersectionBuffer,  offset:0                    , index:2 )
-                computeEncoder.setTexture( renderTargets_1,     index:0 )
-                computeEncoder.setTexture( renderTargets_2,     index:1 )
+                computeEncoder.setTexture( renderTargets_0,     index:0 )
+                computeEncoder.setTexture( renderTargets_1,     index:1 )
                 
                 computeEncoder.setComputePipelineState(shadowPipeline)
-                computeEncoder.dispatchThreads(threadgroups, threadsPerThreadgroup: threadsPerThreadgroup)
+                computeEncoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadsPerThreadgroup)
                 computeEncoder.endEncoding()
                 
-                swap(&renderTargets_1,&renderTargets_2)
+                swap(&renderTargets_0,&renderTargets_1)
                
             }
             /* *** acumulate **** */
             computeEncoder = commandBuffer.makeComputeCommandEncoder()!
-                            
+                    
             computeEncoder.setBuffer(  uniformBuffer,       offset:uniformBufferOffset  , index:0 )
 
-            computeEncoder.setTexture( renderTargets_1,     index:0 )
-            computeEncoder.setTexture( accumulationTargets_1,     index:1 )
-            computeEncoder.setTexture( accumulationTargets_2,     index:2 )
+            computeEncoder.setTexture( renderTargets_0,     index:0 )
+            computeEncoder.setTexture( accumulationTargets_0,     index:1 )
+            computeEncoder.setTexture( accumulationTargets_1,     index:2 )
 
             computeEncoder.setComputePipelineState(accumulatePipeline)
-            computeEncoder.dispatchThreads(threadgroups, threadsPerThreadgroup: threadsPerThreadgroup)
+            computeEncoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadsPerThreadgroup)
             computeEncoder.endEncoding()
 
-            swap(&accumulationTargets_1,&accumulationTargets_2)
+            swap(&accumulationTargets_0,&accumulationTargets_1)
             
             
             let renderPassDescriptor = view.currentRenderPassDescriptor
@@ -373,12 +372,13 @@ class RaytracerRenderer  {
             }
             
             commandBuffer.commit()
-            
         }
     }
     
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
+        
         self.size = size
+        
         let rayCount = Int(size.width)*Int(size.height)
         let options = MTLResourceOptions.storageModePrivate
         
@@ -393,18 +393,22 @@ class RaytracerRenderer  {
         renderTargetDescriptor.width = Int(size.width)
         renderTargetDescriptor.height = Int(size.height)
         
-        renderTargetDescriptor.storageMode = MTLStorageMode.private;
-        
         renderTargetDescriptor.usage = [ MTLTextureUsage.shaderRead , MTLTextureUsage.shaderWrite ]
         
-        
+        renderTargets_0 = device.makeTexture(descriptor:renderTargetDescriptor)!
+        accumulationTargets_0 = device.makeTexture(descriptor:renderTargetDescriptor)!
         renderTargets_1 = device.makeTexture(descriptor:renderTargetDescriptor)!
         accumulationTargets_1 = device.makeTexture(descriptor:renderTargetDescriptor)!
-        renderTargets_2 = device.makeTexture(descriptor:renderTargetDescriptor)!
-        accumulationTargets_2 = device.makeTexture(descriptor:renderTargetDescriptor)!
         
         
-        renderTargetDescriptor.pixelFormat = MTLPixelFormat.r32Uint  ///R32Uint;
+        let randomFloats:[Float32] = (0..<rayCount)
+                                        .flatMap{ _ in [Float.random(in: 0..<1.0),Float.random(in: 0..<0.5),0.0,1.0] }
+                                    
+        accumulationTargets_1.replace(region: MTLRegionMake2D(0, 0, Int(size.width), Int(size.height)), mipmapLevel: 0, withBytes: randomFloats, bytesPerRow: 4*MemoryLayout<Float32>.size * Int(size.width))
+        accumulationTargets_0.replace(region: MTLRegionMake2D(0, 0, Int(size.width), Int(size.height)), mipmapLevel: 0, withBytes: randomFloats, bytesPerRow: 4*MemoryLayout<Float32>.size * Int(size.width))
+        
+        
+        renderTargetDescriptor.pixelFormat = MTLPixelFormat.r32Uint
         renderTargetDescriptor.usage = MTLTextureUsage.shaderRead
         
         #if os(iOS)

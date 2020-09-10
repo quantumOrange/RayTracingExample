@@ -29,6 +29,9 @@ class GameViewController: NSViewController {
             return
         }
 
+        let colorSpace = CGColorSpace(name: CGColorSpace.linearSRGB)
+        mtkView.colorspace = colorSpace
+        
         mtkView.device = defaultDevice
 
         guard let newRenderer = Renderer(metalKitView: mtkView) else {

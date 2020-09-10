@@ -9,14 +9,6 @@
 import Foundation
 import simd
 
-/*
-std::vector<vector_float3> vertices;
-std::vector<vector_float3> normals;
-std::vector<vector_float3> colors;
-std::vector<uint32_t> masks;
-*/
-
-
 enum TriangleMask:Int {
     case geometry = 1
     case light = 2
