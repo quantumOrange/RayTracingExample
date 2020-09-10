@@ -60,5 +60,5 @@ func  matrix4x4_scale(sx:Float, sy:Float, sz:Float) -> matrix_float4x4 {
     return matrix_float4x4.init(columns:(vector_float4(sx,  0, 0,   0),
                                          vector_float4( 0, sy, 0,   0),
                                          vector_float4( 0,  0, sz,  0),
-                                         vector_float4( 0,  0, 0 , 0)))
+                                         vector_float4( 0,  0, 0 , 1)))
 }
