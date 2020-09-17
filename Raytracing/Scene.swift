@@ -84,12 +84,6 @@ class Scene
                                     .map{ SIMD3<Float>($0.x, $0.y, $0.z) }
         
         
-        
-        if faceMask.contains(.negative_X)
-        {
-            createCubeFace(cubeVertices: cubeVertices, color: color, i0: 0, i1: 4, i2: 6, i3: 2, inwardNormals: inwardNormals, triangleMask: triangleMask)
-        }
-        
         if faceMask.contains(.negative_X)
         {
             createCubeFace( cubeVertices: cubeVertices, color: color, i0: 0, i1: 4, i2: 6, i3: 2, inwardNormals: inwardNormals, triangleMask: triangleMask)
