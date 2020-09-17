@@ -50,6 +50,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		54115A062513D22A002DF01D /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		546FAB982507AC6800D2A821 /* Scene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scene.swift; sourceTree = "<group>"; };
 		54CBB0812505542D00FD9ED7 /* RayTracingExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RayTracingExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		54CBB0842505542D00FD9ED7 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -113,6 +114,7 @@
 		54CBB0782505542D00FD9ED7 = {
 			isa = PBXGroup;
 			children = (
+				54115A062513D22A002DF01D /* README.md */,
 				54F465072508EC52008FC842 /* Raytracing */,
 				54CBB0832505542D00FD9ED7 /* RayTracingExample-iOS */,
 				54CBB09D2505543000FD9ED7 /* RayTracingExampleTests */,
